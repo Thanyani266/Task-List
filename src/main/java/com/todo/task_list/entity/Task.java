@@ -1,0 +1,54 @@
+package com.todo.task_list.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "tasks")
+public class Task {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+    private LocalDate date;
+    private String status;
+
+    public Task() {}
+
+    public Task(String title, LocalDate date, String status) {
+        this.title = title;
+        this.date = date;
+        this.status = status;
+    }
+
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    @Transient
+    private String dayLabel;
+
+    public String getDayLabel() {
+        if (date.equals(LocalDate.now())) {
+            return "Today";
+        } else if (date.equals(LocalDate.now().plusDays(1))) {
+            return "Tomorrow";
+        } else {
+            return "Other";
+        }
+    }
+}
+
+
+
