@@ -1,7 +1,6 @@
 package com.todo.task_list.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 
 @Entity
@@ -16,12 +15,18 @@ public class Task {
     private LocalDate date;
     private String status;
 
+    // 🔹 Link each task to a user
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Task() {}
 
-    public Task(String title, LocalDate date, String status) {
+    public Task(String title, LocalDate date, String status, User user) {
         this.title = title;
         this.date = date;
         this.status = status;
+        this.user = user;
     }
 
     // Getters and Setters
@@ -36,6 +41,9 @@ public class Task {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     @Transient
     private String dayLabel;

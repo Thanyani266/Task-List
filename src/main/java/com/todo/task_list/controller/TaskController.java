@@ -1,89 +1,89 @@
 package com.todo.task_list.controller;
 
 import com.todo.task_list.entity.Task;
+import com.todo.task_list.entity.User;
 import com.todo.task_list.repository.TaskRepository;
+import com.todo.task_list.repository.UserRepository;
+import com.todo.task_list.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
 
-    private final TaskRepository taskRepository;
+    @Autowired
+    private TaskRepository taskRepository;
 
-    public TaskController(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
-    }
+    @Autowired
+    private UserRepository userRepository;
 
-    // ---------------- GET /tasks with optional filters ----------------
-    // /tasks?date=YYYY-MM-DD&status=PENDING
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // Get all tasks for the logged-in user
     @GetMapping
-    public List<Task> getTasks(
-            @RequestParam(required = false) String date,
-            @RequestParam(required = false) String status) {
+    public List<Task> getUserTasks(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = jwtUtil.extractUsername(token);
 
-        if (date != null && status != null) {
-            LocalDate filterDate = LocalDate.parse(date);
-            return taskRepository.findByDateAndStatus(filterDate, status);
-        } else if (date != null) {
-            LocalDate filterDate = LocalDate.parse(date);
-            return taskRepository.findByDate(filterDate);
-        } else if (status != null) {
-            return taskRepository.findByStatus(status);
-        } else {
-            return taskRepository.findAll();
-        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return taskRepository.findByUser(user);
     }
 
-    // ---------------- Convenience endpoints ----------------
-
-    // Today's tasks
-    @GetMapping("/today")
-    public List<Task> getTodayTasks() {
-        return taskRepository.findByDate(LocalDate.now());
-    }
-
-    // Tomorrow's tasks
-    @GetMapping("/tomorrow")
-    public List<Task> getTomorrowTasks() {
-        return taskRepository.findByDate(LocalDate.now().plusDays(1));
-    }
-
-    // ---------------- CRUD endpoints ----------------
-
-    @GetMapping("/{id}")
-    public Task getTaskById(@PathVariable Long id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
-    }
-
+    // Create a new task for the logged-in user
     @PostMapping
-    public Task createTask(@RequestBody Task task) {
-        if (task.getDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Task date cannot be in the past");
-        }
+    public Task createTask(@RequestBody Task task,
+                           @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = jwtUtil.extractUsername(token);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        task.setUser(user); // associate task with user
         return taskRepository.save(task);
     }
 
+    // Update a task (only if it belongs to the logged-in user)
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task taskDetails) {
-        if (taskDetails.getDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Task date cannot be in the past");
-        }
+    public Task updateTask(@PathVariable Long id,
+                           @RequestBody Task taskDetails,
+                           @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = jwtUtil.extractUsername(token);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Task task = taskRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Task not found"));
+                .filter(t -> t.getUser().equals(user)) // check ownership
+                .orElseThrow(() -> new RuntimeException("Task not found or not yours"));
+
         task.setTitle(taskDetails.getTitle());
         task.setDate(taskDetails.getDate());
         task.setStatus(taskDetails.getStatus());
         return taskRepository.save(task);
-    } 
+    }
 
-
+    // Delete a task (only if it belongs to the logged-in user)
     @DeleteMapping("/{id}")
-    public void deleteTask(@PathVariable Long id) {
-        taskRepository.deleteById(id);
+    public void deleteTask(@PathVariable Long id,
+                           @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = jwtUtil.extractUsername(token);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Task task = taskRepository.findById(id)
+                .filter(t -> t.getUser().equals(user))
+                .orElseThrow(() -> new RuntimeException("Task not found or not yours"));
+
+        taskRepository.delete(task);
     }
 }

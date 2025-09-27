@@ -1,6 +1,7 @@
 package com.todo.task_list.repository;
 
 import com.todo.task_list.entity.Task;
+import com.todo.task_list.entity.User;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,5 +19,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByDateAndStatus(LocalDate date, String status);
     // Delete tasks by date and status
     int deleteByDateAndStatus(LocalDate date, String status);
+    List<Task> findByUser(User user);
 
 }
