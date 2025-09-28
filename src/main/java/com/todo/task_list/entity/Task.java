@@ -3,6 +3,8 @@ package com.todo.task_list.entity;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -18,6 +20,7 @@ public class Task {
     // 🔹 Link each task to a user
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
 
     public Task() {}
@@ -56,6 +59,11 @@ public class Task {
         } else {
             return "Other";
         }
+    }
+
+    // Expose user_id directly in the JSON response
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
     }
 }
 

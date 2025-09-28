@@ -12,11 +12,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByDateAndStatusNot(LocalDate date, String status);
     // Get all tasks for a specific date
-    List<Task> findByDate(LocalDate date);
+    List<Task> findByUserAndDate(User user, LocalDate date);
     // Get all tasks with a specific status
-    List<Task> findByStatus(String status);
+    List<Task> findByUserAndStatus(User user, String status);
     // Get tasks by date and status
-    List<Task> findByDateAndStatus(LocalDate date, String status);
+    List<Task> findByUserAndDateAndStatus(User user, LocalDate date, String status);
     // Delete tasks by date and status
     int deleteByDateAndStatus(LocalDate date, String status);
     List<Task> findByUser(User user);

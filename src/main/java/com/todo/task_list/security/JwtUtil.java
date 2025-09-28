@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.function.Function;
 
 @Component
 public class JwtUtil {
@@ -19,6 +20,7 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long jwtExpiration; // in milliseconds
 
+    // Generate signing key from secret
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
@@ -35,19 +37,32 @@ public class JwtUtil {
 
     // Extract username
     public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
+        return extractClaim(token, Claims::getSubject);
     }
 
-    // Validate token
+    // Extract expiration date
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    // Generic claim extractor
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    // Validate token using username
     public boolean validateToken(String token, String username) {
         final String extractedUsername = extractUsername(token);
         return (extractedUsername.equals(username) && !isTokenExpired(token));
     }
 
+    // Check if token is expired
     private boolean isTokenExpired(String token) {
-        return extractAllClaims(token).getExpiration().before(new Date());
+        return extractExpiration(token).before(new Date());
     }
 
+    // Extract all claims
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
