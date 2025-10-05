@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
@@ -18,6 +20,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Get tasks by date and status
     List<Task> findByUserAndDateAndStatus(User user, LocalDate date, String status);
     // Delete tasks by date and status
+    @Modifying
+    @Transactional
     int deleteByDateAndStatus(LocalDate date, String status);
     List<Task> findByUser(User user);
 
