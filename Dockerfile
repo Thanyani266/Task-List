@@ -1,34 +1,35 @@
+# ========================
 # Stage 1: Build the app
+# ========================
 FROM maven:3.9.4-eclipse-temurin-21 AS build
 
+# Set working directory
 WORKDIR /app
 
-# Copy pom and source
+# Copy pom.xml first to cache dependencies
 COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copy source code
 COPY src ./src
 
-# Build jar
+# Build jar (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Stage 2: Run the app
+
+# ========================
+# Stage 2: Runtime image
+# ========================
 FROM eclipse-temurin:21-jdk
 
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy the jar
+# Copy the built JAR from the build stage
 COPY --from=build /app/target/task-list-0.0.1-SNAPSHOT.jar app.jar
 
-# Install netcat (OpenBSD version)
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
-
-# Copy wait-for-it script
-COPY wait-for-it.sh /app/wait-for-it.sh
-RUN chmod +x /app/wait-for-it.sh
-
-# Expose port
+# Expose the Spring Boot app port
 EXPOSE 8080
 
-# Replace 172.17.0.1 with your host machine IP if different
-CMD ["/app/wait-for-it.sh", "172.17.0.1:5432", "--", "java", "-jar", "app.jar"]
-
-
+# Run the Spring Boot application
+ENTRYPOINT ["java", "-jar", "app.jar"]
