@@ -1,5 +1,5 @@
 name: Build Spring Boot App
-#LEVI
+
 on:
   push:
     branches: [main]
@@ -58,8 +58,8 @@ jobs:
             --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
             --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
             --build-arg JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
-            -t your-dockerhub-username/tasklist:latest .
+            -t carloslevi/tasklist:latest .
 
       - name: Push Docker image
-        run: docker push your-dockerhub-username/tasklist:latest
+        run: docker push carloslevi/tasklist:latest
 
